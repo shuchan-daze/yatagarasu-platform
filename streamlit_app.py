@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import html
-import re
-from datetime import datetime
 from typing import Any
 from urllib.parse import quote_plus
 
@@ -20,17 +18,18 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .stApp { background: #f4f2ec; color: #171714; }
-    .block-container { max-width: 1080px; padding-top: 1.2rem; padding-bottom: 4rem; }
-    .hero { background:#171714; color:white; padding:2rem; border-radius:24px; margin:.5rem 0 1.2rem; }
-    .hero h1 { font-size:clamp(2.1rem,6vw,4.4rem); line-height:1.03; margin:.2rem 0 .8rem; }
-    .hero p { color:#d8d4ca; line-height:1.75; max-width:760px; }
-    .eyebrow { letter-spacing:.12em; font-size:.75rem; color:#bcb7aa; }
-    .news-card { background:#fffdf7; border:1px solid #ddd8cb; border-radius:18px; padding:1rem 1.1rem; margin:.7rem 0; }
+    .stApp { background:#f4f2ec; color:#171714; }
+    .block-container { max-width:1080px; padding-top:1.1rem; padding-bottom:4rem; }
+    .brand { font-size:1.08rem; font-weight:800; letter-spacing:.04em; margin-bottom:.6rem; }
+    .hero { background:#171714; color:#fff; padding:2rem; border-radius:24px; margin:.4rem 0 1.2rem; }
+    .hero h1 { font-size:clamp(2.2rem,6vw,4.5rem); line-height:1.03; margin:.25rem 0 .8rem; }
+    .hero p { color:#d8d4ca; line-height:1.75; max-width:800px; }
+    .eyebrow { letter-spacing:.13em; font-size:.73rem; color:#bbb5a8; }
+    .news-card { background:#fffdf7; border:1px solid #ddd8cb; border-radius:18px; padding:1rem 1.1rem; margin:.65rem 0; }
     .news-card a { color:#171714; text-decoration:none; }
     .news-card a:hover { text-decoration:underline; }
-    .meta { color:#716d63; font-size:.82rem; margin-top:.45rem; }
-    .principle { background:#e9e4d7; border-radius:18px; padding:1rem 1.2rem; }
+    .meta { color:#716d63; font-size:.8rem; margin-top:.4rem; }
+    .notice { background:#e9e4d7; border-radius:18px; padding:1rem 1.15rem; }
     div[data-testid="stButton"] button { border-radius:999px; font-weight:700; }
     </style>
     """,
@@ -38,54 +37,45 @@ st.markdown(
 )
 
 TOPICS = {
-    "国民として重要": "Japan government policy public safety",
-    "仕事・景気・物価": "Japan economy wages inflation employment",
-    "政治・制度": "Japan politics law regulation policy",
-    "外交・安全保障": "Japan diplomacy security geopolitics",
-    "災害・防犯": "Japan disaster crime public safety",
-    "科学・AI": "science artificial intelligence Japan",
-    "医療・福祉": "Japan health healthcare welfare",
-    "地域交通": "Japan local transport mobility",
+    "日本で今、見落とすと困る話": "Japan important public affairs policy society",
+    "仕事・賃金・物価・税金": "Japan wages inflation tax employment economy",
+    "政治・制度・行政の変更": "Japan politics regulation law government policy",
+    "外交・戦争・安全保障": "Japan diplomacy geopolitics war security",
+    "災害・事故・犯罪・詐欺": "Japan disaster accident crime fraud public safety",
+    "医療・介護・年金・福祉": "Japan healthcare nursing care pension welfare",
+    "AI・科学・テクノロジー": "artificial intelligence science technology Japan",
+    "地域交通・観光・インバウンド": "Japan local transport tourism inbound travel",
+    "教育・子育て・若者": "Japan education childcare youth",
+    "住宅・不動産・地方移住": "Japan housing real estate regional migration",
+    "環境・エネルギー・食料": "Japan environment energy food agriculture",
+    "企業不祥事・消費者問題": "Japan corporate scandal consumer affairs",
+    "世界で注目され、日本で薄い話": "global major story underreported in Japan",
+    "X・SNSで急浮上している話": "Japan X social media viral trend public issue",
+    "海外から見た日本": "international media view of Japan",
 }
 
 AGE_OPTIONS = ["回答しない", "10代", "20代", "30代", "40代", "50代", "60代", "70代以上"]
-GENDER_OPTIONS = ["回答しない", "男性", "女性", "その他・自由回答"]
-JOB_OPTIONS = [
-    "回答しない",
-    "会社員",
-    "自営業・経営",
-    "交通・物流",
-    "医療・福祉",
-    "教育・研究",
-    "観光・接客",
-    "公務・団体",
-    "学生",
-    "無職・退職",
-    "その他",
-]
+GENDER_OPTIONS = ["回答しない", "男性", "女性", "その他", "自由記述"]
 REGION_OPTIONS = [
-    "回答しない",
-    "北海道",
-    "東北",
-    "関東",
-    "甲信越・北陸",
-    "東海",
-    "近畿",
-    "中国",
-    "四国",
-    "九州・沖縄",
-    "海外",
+    "回答しない", "北海道", "東北", "関東", "甲信越・北陸", "東海", "近畿", "中国", "四国", "九州・沖縄", "海外"
 ]
 
 DEFAULTS = {
     "profile_ready": False,
-    "age": "回答しない",
     "gender": "回答しない",
-    "job": "回答しない",
+    "gender_note": "",
+    "age": "回答しない",
+    "job": "",
     "region": "回答しない",
-    "topics": ["国民として重要", "仕事・景気・物価", "政治・制度", "外交・安全保障"],
+    "topics": [
+        "日本で今、見落とすと困る話",
+        "仕事・賃金・物価・税金",
+        "世界で注目され、日本で薄い話",
+        "海外から見た日本",
+    ],
     "custom_topic": "",
     "bear": False,
+    "x_trends": True,
 }
 for key, value in DEFAULTS.items():
     st.session_state.setdefault(key, value)
@@ -104,9 +94,7 @@ def fetch_feed(url: str, limit: int = 20) -> tuple[list[dict[str, str]], str | N
         response = requests.get(
             url,
             timeout=12,
-            headers={
-                "User-Agent": "YATAGARASU-VIEW/0.1 (+https://github.com/shuchan-daze/yatagarasu-platform)"
-            },
+            headers={"User-Agent": "YATAGARASU-VIEW/0.2"},
         )
         response.raise_for_status()
         parsed = feedparser.parse(response.content)
@@ -127,7 +115,7 @@ def fetch_feed(url: str, limit: int = 20) -> tuple[list[dict[str, str]], str | N
         return [], f"ニュース取得に失敗しました: {exc.__class__.__name__}"
 
 
-def render_items(items: list[dict[str, str]], error: str | None, *, empty_message: str) -> None:
+def render_items(items: list[dict[str, str]], error: str | None, empty_message: str) -> None:
     if error:
         st.warning(error)
         return
@@ -151,55 +139,87 @@ def render_items(items: list[dict[str, str]], error: str | None, *, empty_messag
 
 
 def selected_queries() -> tuple[str, str]:
-    selected = st.session_state.topics or ["国民として重要"]
+    selected = st.session_state.topics or ["日本で今、見落とすと困る話"]
     japanese = " OR ".join(selected)
     english = " OR ".join(TOPICS.get(topic, topic) for topic in selected)
     custom = st.session_state.custom_topic.strip()
+    job = st.session_state.job.strip()
     if custom:
         japanese += f" OR {custom}"
         english += f" OR {custom}"
+    if job:
+        japanese += f" OR {job} 業界"
+        english += f" OR Japan {job} industry"
     return japanese, english
 
 
 def onboarding() -> None:
+    st.markdown('<div class="brand">八咫烏 VIEW</div>', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="hero">
-          <div class="eyebrow">YATAGARASU INFORMATION LENS</div>
-          <h1>一つのニュースに、<br>もう一つの視点を。</h1>
-          <p>国内の見出し、海外の見出し、一次情報への入口を分けて示します。結論を押しつけず、判断材料を増やすための実験アプリです。</p>
+          <div class="eyebrow">YATAGARASU VIEW</div>
+          <h1>見えていない世界を、<br>もう一方向から。</h1>
+          <p>国内報道、海外報道、一次情報、社会の急な関心を並べます。答えを押しつけず、視野と判断材料を増やすための実験版です。</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.subheader("あなたに必要な視界をつくる")
-    st.caption("すべて任意回答です。この実験版では外部データベースへ保存しません。")
+    st.subheader("最初に、あなたの視界を整える")
+    st.caption("回答はすべて任意です。職業は具体的に書くほど、仕事や周辺業界の情報を拾いやすくなります。")
+
     with st.form("onboarding"):
-        left, right = st.columns(2)
-        with left:
-            age = st.selectbox("年齢層", AGE_OPTIONS, index=AGE_OPTIONS.index(st.session_state.age))
-            job = st.selectbox("仕事・立場", JOB_OPTIONS, index=JOB_OPTIONS.index(st.session_state.job))
-        with right:
-            gender = st.selectbox("性別", GENDER_OPTIONS, index=GENDER_OPTIONS.index(st.session_state.gender))
-            region = st.selectbox("地域", REGION_OPTIONS, index=REGION_OPTIONS.index(st.session_state.region))
-        topics = st.multiselect("知りたい分野", list(TOPICS), default=st.session_state.topics)
-        custom = st.text_input(
-            "個人的に追いたいテーマ",
-            value=st.session_state.custom_topic,
-            placeholder="例：介護制度、観光業、農業、地域交通",
+        gender = st.selectbox("1. 性別", GENDER_OPTIONS, index=GENDER_OPTIONS.index(st.session_state.gender))
+        gender_note = ""
+        if gender == "自由記述":
+            gender_note = st.text_input("性別の自由記述", value=st.session_state.gender_note)
+
+        age = st.selectbox("2. 年齢層", AGE_OPTIONS, index=AGE_OPTIONS.index(st.session_state.age))
+
+        job = st.text_input(
+            "3. 仕事・立場を具体的に",
+            value=st.session_state.job,
+            placeholder="例：軽井沢で観光客を乗せるタクシードライバー／介護施設の経営／製造業の営業",
         )
-        bear = st.checkbox("クマ・野生動物の安全情報を含める", value=st.session_state.bear)
+        st.caption("職種だけでなく、地域・顧客・業界を書ける範囲で入れると精度が上がります。")
+
+        region = st.selectbox("4. 主な生活・仕事地域", REGION_OPTIONS, index=REGION_OPTIONS.index(st.session_state.region))
+
+        topics = st.multiselect(
+            "5. 普段のニュースでは足りないと感じる領域",
+            list(TOPICS),
+            default=st.session_state.topics,
+        )
+
+        custom = st.text_area(
+            "6. 個人的に追いたいテーマ",
+            value=st.session_state.custom_topic,
+            placeholder="例：地方のタクシー制度、観光客の変化、睡眠医療、BMWの制度変更、手書きOCR",
+            height=90,
+        )
+
+        x_trends = st.checkbox(
+            "X・SNSで急に話題になった社会テーマを拾う",
+            value=st.session_state.x_trends,
+        )
+        bear = st.checkbox(
+            "クマ・野生動物の安全情報を含める",
+            value=st.session_state.bear,
+        )
+
         submitted = st.form_submit_button("八咫烏 VIEWを開く", type="primary", use_container_width=True)
         if submitted:
             st.session_state.update(
                 profile_ready=True,
-                age=age,
                 gender=gender,
+                gender_note=gender_note,
+                age=age,
                 job=job,
                 region=region,
-                topics=topics or ["国民として重要"],
+                topics=topics or ["日本で今、見落とすと困る話"],
                 custom_topic=custom,
                 bear=bear,
+                x_trends=x_trends,
             )
             st.rerun()
 
@@ -207,7 +227,9 @@ def onboarding() -> None:
 def settings_panel() -> None:
     st.subheader("表示設定")
     st.session_state.topics = st.multiselect("優先分野", list(TOPICS), default=st.session_state.topics)
-    st.session_state.custom_topic = st.text_input("個別テーマ", value=st.session_state.custom_topic)
+    st.session_state.job = st.text_input("仕事・立場", value=st.session_state.job)
+    st.session_state.custom_topic = st.text_area("個別テーマ", value=st.session_state.custom_topic)
+    st.session_state.x_trends = st.checkbox("X・SNS急浮上テーマ", value=st.session_state.x_trends)
     st.session_state.bear = st.checkbox("クマ・野生動物情報", value=st.session_state.bear)
     if st.button("設定を反映", type="primary", use_container_width=True):
         st.cache_data.clear()
@@ -221,119 +243,86 @@ if not st.session_state.profile_ready:
     onboarding()
     st.stop()
 
-st.markdown("**八咫烏 VIEW**　<small>GUIDE, NOT DECIDE.</small>", unsafe_allow_html=True)
+st.markdown('<div class="brand">八咫烏 VIEW　<small>GUIDE, NOT DECIDE.</small></div>', unsafe_allow_html=True)
 st.markdown(
     """
     <div class="hero">
       <div class="eyebrow">TODAY'S PERSPECTIVE</div>
-      <h1>見出しを比べて、<br>判断材料を増やす。</h1>
-      <p>現在は公開RSS見出しを並べる最初の実験版です。重要度の自動判定、同一事件の束ね、AI要約、一次資料との照合は次の段階で実装します。</p>
+      <h1>ニュースを読むから、<br>見え方を比べるへ。</h1>
+      <p>公開RSSを使った実験版です。今後、同一事件の束ね、重要度判定、一次資料の照合、Xの直接トレンド取得へ発展させます。</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-profile_bits = [value for value in [st.session_state.job, st.session_state.region] if value != "回答しない"]
-st.caption(
-    "設定: "
-    + ("・".join(profile_bits) if profile_bits else "属性指定なし")
-    + " ｜ "
-    + "・".join(st.session_state.topics)
-)
+profile_bits = [v for v in [st.session_state.job, st.session_state.region] if v and v != "回答しない"]
+st.caption("設定: " + ("・".join(profile_bits) if profile_bits else "属性指定なし"))
 
-labels = ["今日", "国内と海外", "視差メモ", "設定", "姿勢"]
+labels = ["今日の重要", "国内と海外", "急浮上", "設定", "このアプリの姿勢"]
 if st.session_state.bear:
-    labels.insert(2, "クマ情報")
+    labels.insert(3, "クマ情報")
 tabs = st.tabs(labels)
 
 japanese_query, english_query = selected_queries()
 
 with tabs[0]:
-    st.subheader("今日の入口")
-    st.caption("選んだ分野と直近24時間前後の見出しを機械的に抽出しています。『重要』と断定する段階ではありません。")
+    st.subheader("今日、見落とすと困る入口")
+    st.caption("選択分野、仕事内容、個別テーマから直近の見出しを抽出します。重要度の最終判定はまだ行いません。")
     domestic_url = google_news_url(f"({japanese_query}) when:1d")
-    domestic, domestic_error = fetch_feed(domestic_url, 10)
-    render_items(domestic[:8], domestic_error, empty_message="該当する見出しが見つかりませんでした。")
-    if st.button("最新状態に更新", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+    items, error = fetch_feed(domestic_url, 14)
+    render_items(items[:10], error, "該当する見出しが見つかりませんでした。")
 
 with tabs[1]:
     st.subheader("日本語圏と国際報道を並べる")
-    st.caption("同一事件を自動対応させる機能は未実装です。現段階では、同じ関心分野を左右に並べて視点の違いを探します。")
     left, right = st.columns(2)
     with left:
-        st.markdown("### 日本語圏の見出し")
+        st.markdown("### 日本語圏")
         local_url = google_news_url(f"({japanese_query}) when:2d")
         local_items, local_error = fetch_feed(local_url, 10)
-        render_items(local_items[:6], local_error, empty_message="日本語圏の見出しが見つかりませんでした。")
+        render_items(local_items[:7], local_error, "日本語圏の見出しが見つかりませんでした。")
     with right:
-        st.markdown("### 国際メディアの見出し")
-        trusted_sources = '(source:Reuters OR source:BBC OR source:Bloomberg OR source:"Associated Press")'
+        st.markdown("### 国際メディア")
+        sources = '(source:Reuters OR source:BBC OR source:Bloomberg OR source:"Associated Press" OR source:"Financial Times")'
         world_url = google_news_url(
-            f"({english_query}) {trusted_sources} when:2d",
+            f"({english_query}) {sources} when:2d",
             language="en-US",
             country="US",
             edition="US:en",
         )
-        world_items, world_error = fetch_feed(world_url, 12)
-        render_items(world_items[:6], world_error, empty_message="国際メディアの見出しが見つかりませんでした。")
+        world_items, world_error = fetch_feed(world_url, 10)
+        render_items(world_items[:7], world_error, "国際メディアの見出しが見つかりませんでした。")
 
-next_index = 2
+with tabs[2]:
+    st.subheader("急に社会の関心が集まった話")
+    if st.session_state.x_trends:
+        st.caption("現段階ではXの公式API直結ではなく、X・SNSで話題化したテーマを報道見出しから拾う仮実装です。")
+        trend_url = google_news_url(f"(X OR SNS OR 炎上 OR 急浮上 OR トレンド) ({japanese_query}) when:1d")
+        trend_items, trend_error = fetch_feed(trend_url, 14)
+        render_items(trend_items[:10], trend_error, "急浮上テーマが見つかりませんでした。")
+    else:
+        st.info("設定で『X・SNSで急に話題になった社会テーマ』をオンにすると表示されます。")
+
+next_index = 3
 if st.session_state.bear:
-    with tabs[2]:
+    with tabs[next_index]:
         st.subheader("クマ・野生動物の安全情報")
-        region_word = "" if st.session_state.region == "回答しない" else st.session_state.region
-        bear_url = google_news_url(f"クマ OR 熊 {region_word} when:7d")
-        bear_items, bear_error = fetch_feed(bear_url, 15)
-        render_items(bear_items[:10], bear_error, empty_message="直近の関連見出しが見つかりませんでした。")
-        st.caption("緊急時は、自治体・警察・防災無線などの一次情報を優先してください。")
-    next_index = 3
+        bear_url = google_news_url("(クマ OR 熊 OR ツキノワグマ OR ヒグマ) (出没 OR 被害 OR 注意 OR 人身) when:3d")
+        bear_items, bear_error = fetch_feed(bear_url, 14)
+        render_items(bear_items[:10], bear_error, "該当する安全情報が見つかりませんでした。")
+    next_index += 1
 
 with tabs[next_index]:
-    st.subheader("視差メモ")
-    st.caption("二つの記事の見出しや要約を貼り、数字と表現の差を確認します。内容の真偽は判定しません。")
-    left, right = st.columns(2)
-    with left:
-        text_a = st.text_area("国内側の見出し・要約", height=180)
-    with right:
-        text_b = st.text_area("海外側の見出し・要約", height=180)
-    if st.button("差を整理する", type="primary", use_container_width=True):
-        if not text_a.strip() or not text_b.strip():
-            st.warning("両方の文章を入力してください。")
-        else:
-            number_pattern = r"\d[\d,.]*(?:%|％|円|ドル|人|件|年|月|日|倍|兆|億|万)?"
-            numbers_a = re.findall(number_pattern, text_a)
-            numbers_b = re.findall(number_pattern, text_b)
-            c1, c2, c3 = st.columns(3)
-            c1.metric("国内側の文字数", len(text_a))
-            c2.metric("海外側の文字数", len(text_b))
-            c3.metric("数字表現数の差", abs(len(numbers_a) - len(numbers_b)))
-            st.write("**国内側の数字:**", "、".join(numbers_a) or "なし")
-            st.write("**海外側の数字:**", "、".join(numbers_b) or "なし")
-            st.info("片方だけにある数字・固有名詞・評価語は、元資料で確認する候補です。")
-
-with tabs[next_index + 1]:
     settings_panel()
 
-with tabs[next_index + 2]:
-    st.subheader("このアプリの姿勢")
+with tabs[next_index + 1]:
     st.markdown(
         """
-        <div class="principle">
-        <strong>国内報道を否定するアプリではありません。</strong><br><br>
-        海外報道を正解とするアプリでもありません。複数の情報環境を並べ、利用者自身が見落としていた前提や違いに気づける状態を目指します。
+        <div class="notice">
+        <strong>八咫烏 VIEWの姿勢</strong><br><br>
+        国内報道を否定するアプリではありません。海外報道を正解と決めるアプリでもありません。<br>
+        一つの情報環境だけでは見えにくい視点を増やし、利用者が自分で判断できる状態をつくります。<br><br>
+        事実、解釈、予測を分け、確認できないことを断定しません。
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(
-        """
-        - 事実、解釈、推測を分ける
-        - 可能な限り一次資料へ戻れるリンクを残す
-        - 一社の『信頼度点数』で真偽を決めない
-        - 読者の属性を思想誘導に使わない
-        - 記事本文を無断転載しない
-        """
-    )
-    st.caption(f"Prototype 0.1 ｜ {datetime.now().strftime('%Y-%m-%d')}")
