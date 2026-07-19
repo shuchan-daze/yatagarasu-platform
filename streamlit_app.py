@@ -15,23 +15,26 @@ st.markdown(
     <style>
     .stApp { background:#090b12; color:#f7f7f3; }
     .block-container { max-width:980px; padding-top:1rem; padding-bottom:5rem; }
-    .brand { font-weight:900; letter-spacing:.08em; font-size:1rem; opacity:.9; }
+    .brand { font-weight:900; letter-spacing:.08em; font-size:1rem; opacity:.92; }
     .hero { border-radius:28px; padding:2.2rem; margin:.8rem 0 1.4rem;
       background:linear-gradient(145deg,#16213e,#0f3460 45%,#533483 100%); box-shadow:0 20px 60px rgba(0,0,0,.35); }
     .hero h1 { font-size:clamp(2.4rem,7vw,5.2rem); line-height:1.02; margin:.2rem 0 .8rem; }
     .hero p { font-size:1.05rem; line-height:1.8; color:#e8e8ef; max-width:760px; }
-    .time-card { border-radius:28px; padding:1.5rem 1.6rem; margin:1rem 0;
-      background:linear-gradient(135deg,var(--c1),var(--c2)); min-height:220px; display:flex; flex-direction:column; justify-content:flex-end;
-      box-shadow:0 18px 45px rgba(0,0,0,.28); }
-    .time-card .clock { font-size:clamp(3rem,12vw,7rem); font-weight:900; letter-spacing:-.05em; }
-    .time-card .label { font-size:1.05rem; opacity:.92; }
+    .question { text-align:center; margin:1.4rem 0 .25rem; font-size:clamp(1.35rem,4vw,2.1rem); font-weight:850; }
+    .clock-display { text-align:center; font-size:clamp(4rem,16vw,8rem); font-weight:950; letter-spacing:-.07em; line-height:1; margin:.35rem 0 .7rem; }
+    .scene { position:relative; overflow:hidden; border-radius:30px; min-height:360px; margin:1rem 0 1.2rem;
+      background-position:center; background-size:cover; box-shadow:0 24px 70px rgba(0,0,0,.45); }
+    .scene::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.62)); }
+    .scene-copy { position:absolute; z-index:2; left:1.45rem; right:1.45rem; bottom:1.25rem; }
+    .scene-kicker { font-size:.78rem; letter-spacing:.15em; opacity:.85; font-weight:800; }
+    .scene-label { font-size:clamp(1.35rem,4vw,2.2rem); font-weight:900; margin-top:.2rem; }
+    .slider-help { text-align:center; color:#bfc7d8; margin:-.2rem 0 .3rem; font-size:.9rem; }
     .news-card { background:#151923; border:1px solid #2a3040; border-radius:24px; padding:1.2rem 1.25rem; margin:.8rem 0; }
     .news-card a { color:#fff; text-decoration:none; font-size:1.06rem; }
     .news-card a:hover { text-decoration:underline; }
     .meta { color:#aab2c5; font-size:.8rem; margin-top:.5rem; }
-    .soft { background:#111520; border:1px solid #293044; border-radius:22px; padding:1rem 1.1rem; }
     div[data-testid="stButton"] button { border-radius:999px; font-weight:800; min-height:3rem; }
-    div[data-testid="stSlider"] { padding-top:.5rem; }
+    div[data-testid="stSlider"] { padding-top:.2rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -53,17 +56,37 @@ def slot_to_time(slot: int) -> str:
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
-def sky(slot: int) -> tuple[str, str, str]:
+def scene_for(slot: int) -> tuple[str, str, str]:
     hour = slot / 2
     if 5 <= hour < 9:
-        return "#ff9966", "#ff5e62", "朝の光がほどける時間"
+        return (
+            "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1600&q=88",
+            "MORNING",
+            "朝の光とともに、世界が届く",
+        )
     if 9 <= hour < 16:
-        return "#56ccf2", "#2f80ed", "空がいちばん高く見える時間"
+        return (
+            "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=88",
+            "DAYLIGHT",
+            "空が広がる時間に、世界が届く",
+        )
     if 16 <= hour < 19:
-        return "#f7971e", "#ffd200", "世界が夕色に変わる時間"
+        return (
+            "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=88",
+            "SUNSET",
+            "夕色の中で、世界が届く",
+        )
     if 19 <= hour < 24:
-        return "#141e30", "#243b55", "街の音が少し静かになる時間"
-    return "#020024", "#090979", "星の下で世界を受け取る時間"
+        return (
+            "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=88",
+            "NIGHT",
+            "静かな夜に、世界が届く",
+        )
+    return (
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=88",
+        "BEFORE DAWN",
+        "夜明け前の静けさに、世界が届く",
+    )
 
 
 def google_news_url(query: str) -> str:
@@ -73,7 +96,7 @@ def google_news_url(query: str) -> str:
 @st.cache_data(ttl=900, show_spinner=False)
 def fetch_feed(query: str, limit: int = 12) -> list[dict[str, str]]:
     try:
-        response = requests.get(google_news_url(query), timeout=12, headers={"User-Agent": "YATAGARASU-VIEW/0.3"})
+        response = requests.get(google_news_url(query), timeout=12, headers={"User-Agent": "YATAGARASU-VIEW/0.4"})
         response.raise_for_status()
         parsed = feedparser.parse(response.content)
         items: list[dict[str, str]] = []
@@ -117,13 +140,30 @@ def onboarding() -> None:
         unsafe_allow_html=True,
     )
 
-    slot = st.slider("", 0, 47, int(st.session_state.delivery_slot), label_visibility="collapsed")
-    c1, c2, label = sky(slot)
-    time_text = slot_to_time(slot)
+    current_slot = int(st.session_state.delivery_slot)
+    current_time = slot_to_time(current_slot)
+    image_url, kicker, scene_label = scene_for(current_slot)
+
+    st.markdown('<div class="question">何時に、今日の世界を受け取りますか？</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="clock-display">{current_time}</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="time-card" style="--c1:{c1};--c2:{c2};"><div class="label">{label}</div><div class="clock">{time_text}</div><div class="label">この時間に、今日の世界を届けます</div></div>',
+        f'''
+        <div class="scene" style="background-image:url('{image_url}');">
+          <div class="scene-copy">
+            <div class="scene-kicker">{kicker}</div>
+            <div class="scene-label">{scene_label}</div>
+          </div>
+        </div>
+        ''',
         unsafe_allow_html=True,
     )
+
+    st.markdown('<div class="slider-help">左右に動かすと、30分単位で時間と景色が変わります</div>', unsafe_allow_html=True)
+    slot = st.slider("配信時間", 0, 47, current_slot, label_visibility="collapsed", key="onboarding_slot")
+
+    if slot != current_slot:
+        st.session_state.delivery_slot = slot
+        st.rerun()
 
     bear = st.toggle("クマ・野生動物の安全情報も受け取る", value=st.session_state.bear)
     if st.button("この時間から始める", type="primary", use_container_width=True):
@@ -157,8 +197,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-query = "日本 世界 重要ニュース when:1d"
-items = fetch_feed(query, 15)
+items = fetch_feed("日本 世界 重要ニュース when:1d", 15)
 initial_count = 4 if len(items) >= 4 else len(items)
 render_news(items, initial_count + st.session_state.depth * 4)
 
@@ -184,8 +223,7 @@ if liked or bored or saved:
 
 if st.session_state.bear:
     st.markdown("### クマ・野生動物")
-    bear_items = fetch_feed("クマ 出没 長野 群馬 軽井沢 when:3d", 8)
-    render_news(bear_items, 4)
+    render_news(fetch_feed("クマ 出没 長野 群馬 軽井沢 when:3d", 8), 4)
 
 with st.expander("配信時間を変える"):
     new_slot = st.slider("配信時間", 0, 47, int(st.session_state.delivery_slot))
